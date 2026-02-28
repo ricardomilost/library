@@ -7,7 +7,7 @@ import (
 	"github.com/mattn/go-sqlite3"
 	//_ "github.com/mattn/go-sqlite3" // init sqlite3 driver
 
-	"url-shortener/internal/storage"
+	"library/internal/storage"
 )
 
 /*
@@ -55,28 +55,45 @@ CREATE INDEX IF NOT EXISTS idx_alias ON url(alias);
 		чтобы в логах было понятно, где именно произошёл сбой. */
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+	// Выполняем подготовленный SQL-запрос (например, создание таблицы).
 	_, err = stmt.Exec()
 	if err != nil {
+		// Добавляем контекст операции и пробрасываем исходную ошибку выше.
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	// Инициализация прошла успешно: возвращаем объект хранилища с открытой БД.
 	return &Storage{db: db}, nil
 }
+
 func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	const op = "storage.sqlite.SaveURL"
+
+	// Подготавливаем INSERT с плейсхолдерами, чтобы безопасно передать значения.
 	stmt, err := s.db.Prepare("INSERT INTO url(url, alias) VALUES (?, ?)")
 	if err != nil {
+		// Ошибка на этапе подготовки SQL.
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
+
+	// Выполняем INSERT и передаём реальные значения url и alias.
 	res, err := stmt.Exec(urlToSave, alias)
 	if err != nil {
+		// Если нарушено уникальное ограничение (дубликат alias/url),
+		// возвращаем понятную бизнес-ошибку ErrURLExists.
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			return 0, fmt.Errorf("%s: %w", op, storage.ErrURLExists)
 		}
+		// Любую другую SQL-ошибку возвращаем как есть, с контекстом операции.
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
+
+	// Получаем ID только что добавленной записи.
 	id, err := res.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("%s: falied to get last insert id: %w", op, err)
+		return 0, fmt.Errorf("%s: failed to get last insert id: %w", op, err)
 	}
+
+	// Успех: возвращаем ID новой записи.
 	return id, nil
 }
