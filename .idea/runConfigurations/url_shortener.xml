@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="url-shortener" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="library" />
+    <working_directory value="$PROJECT_DIR$" />
+    <kind value="FILE" />
+    <filePath value="$PROJECT_DIR$/cmd/url-shortener/main.go" />
+    <envs>
+      <env name="CONFIG_PATH" value="$PROJECT_DIR$/config/local.yaml" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"library/internal/config"
+	"library/internal/lib/logger/sl"
 	"library/internal/storage/sqlite"
 	"log/slog"
 	"os"
@@ -46,16 +47,17 @@ func main() {
 	(например в local/dev, в зависимости от твоей настройки). */
 	log.Debug("debug messages are enabled")
 
-	/* Создаём хранилище (подключаемся к БД) по пути из конфига.
-	Если база не существует, SQLite обычно создаст файл автоматически. */
+	/* Инициализируем хранилище: подключаемся к SQLite по пути из конфига.
+	Если файла базы ещё нет, SQLite создаст его автоматически. */
 	storage, err := sqlite.New(cfg.StoragePath)
 	if err != nil {
-		/* Если инициализировать хранилище не удалось,
-		пишем ошибку и завершаем приложение, потому что без БД работать нельзя. */
-		log.Error("failed to init storage")
+		/* Если подключение к базе не удалось, продолжать работу нельзя:
+		приложение не сможет сохранять и читать данные.
+		Пишем ошибку в лог и завершаем процесс с кодом 1. */
+		log.Error("failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
-	
+	_ = storage
 }
 
 /* setupLogger создаёт и возвращает логгер.
